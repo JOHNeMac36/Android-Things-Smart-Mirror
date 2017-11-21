@@ -2,16 +2,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.john.smartmirror">
     <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
         android:icon="@android:drawable/sym_def_app_icon"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+
         <uses-library android:name="com.google.android.things" />
         <activity android:name=".MirrorDisplay"
             android:label="@string/app_name"
-            android:configChanges="orientation"
-            android:screenOrientation="portrait">
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.IOT_LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".CalendarDisplay"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:label="@string/app_name"
+            android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

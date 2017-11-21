@@ -1,12 +1,16 @@
-package com.example.john.smartmirror;
+    package com.example.john.smartmirror;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Point;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Display;
+import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.johnhiott.darkskyandroidlib.ForecastApi;
@@ -31,9 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -71,6 +73,11 @@ public class MirrorDisplay extends Activity {
     ImageView weather_icon_image_view;
     TextView news_label_text_view;
     TextView news_text_view;
+    TextView current_weather_text_view,
+            temperature_text_view,
+            forecast_text_view,
+            location_text_view;
+
     Timer timer;
     Runnable get_weather = new Runnable() {
         String location = "";
@@ -137,6 +144,7 @@ public class MirrorDisplay extends Activity {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             try {
                 synchronized (this) {
                     wait(500);
@@ -168,6 +176,13 @@ public class MirrorDisplay extends Activity {
                                 }
                             }, 100, 60000);
 
+                            timer.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    Intent intent = new Intent(MirrorDisplay.this, CalendarDisplay.class);
+                                    startActivity(intent);
+                                    finish();                                }
+                            }, 6000);
                         }
                     });
 
@@ -208,12 +223,21 @@ public class MirrorDisplay extends Activity {
         news_label_text_view = (TextView) findViewById(R.id.news_label_text_view);
         news_text_view = (TextView) findViewById(R.id.news_text_view);
 
+        current_weather_text_view = (TextView) findViewById(R.id.current_weather_text_view);
+        temperature_text_view = (TextView) findViewById(R.id.temperature_text_view);
+        forecast_text_view = (TextView) findViewById(R.id.forecast_text_view);
+        location_text_view = (TextView) findViewById(R.id.location_text_view);
+
         Typeface helvetica = Typeface.createFromAsset(getAssets(), "fonts/Helvetica-Regular.ttf");
         time_text_view.setTypeface(helvetica);
         dow_text_view.setTypeface(helvetica);
         date_text_view.setTypeface(helvetica);
         news_label_text_view.setTypeface(helvetica);
         news_text_view.setTypeface(helvetica);
+        current_weather_text_view.setTypeface(helvetica);
+        temperature_text_view.setTypeface(helvetica);
+        forecast_text_view.setTypeface(helvetica);
+        location_text_view.setTypeface(helvetica);
 
         timer = new Timer();
         Thread thr = new Thread(ui_thread);
@@ -238,6 +262,7 @@ public class MirrorDisplay extends Activity {
                 TextView date_text_view = (TextView) findViewById(R.id.date_text_view);
                 TextView dow_text_view = (TextView) findViewById(R.id.dow_text_view);
                 DateFormat format = new SimpleDateFormat("MMM d, YYYY");
+                format.setTimeZone(TimeZone.getTimeZone("America/New_York"));
                 date_text_view.setText(format.format(currentTime));
                 format = new SimpleDateFormat("EEEE");
                 dow_text_view.setText(format.format(currentTime));
@@ -254,14 +279,14 @@ public class MirrorDisplay extends Activity {
                 Log.d(TAG, "News change called");
                 String headlines = "", headline, publisher;
                 for (int i = 0; i < 5; i++) {
-                    headline = list.get(i+1).getTitle();
+                    headline = list.get(i + 1).getTitle();
                     publisher = headline.substring(headline.indexOf(" - "), headline.length());
-                    headline = headline.substring(0,headline.indexOf(" - "));
-                    final int MAX_NEWS_TITLE_LEN = 55, MAX_PUBLISHER_LEN = 22;
-                    if(publisher.length() >= MAX_NEWS_TITLE_LEN){
-                        publisher = publisher.substring(0,MAX_PUBLISHER_LEN);
+                    headline = headline.substring(0, headline.indexOf(" - "));
+                    final int MAX_NEWS_TITLE_LEN = 50, MAX_PUBLISHER_LEN = 20;
+                    if (publisher.length() >= MAX_NEWS_TITLE_LEN) {
+                        publisher = publisher.substring(0, MAX_PUBLISHER_LEN);
                     }
-                    if(headline.length() >= MAX_NEWS_TITLE_LEN){
+                    if (headline.length() >= MAX_NEWS_TITLE_LEN) {
                         headline = headline.substring(0, MAX_NEWS_TITLE_LEN - 3) + "...";
                     }
                     headlines += headline + publisher + "\n";
@@ -282,9 +307,9 @@ public class MirrorDisplay extends Activity {
                 Log.d(TAG, "onError*() Called");
             }
         });
-        Log.d(TAG,"Parser to execute");
+        Log.d(TAG, "Parser to execute");
         parser.execute(urlString);
-        Log.d(TAG,"Parser executed");
+        Log.d(TAG, "Parser executed");
 
     }
 
@@ -301,34 +326,46 @@ public class MirrorDisplay extends Activity {
                 TextView forecast_text_view = (TextView) findViewById(R.id.forecast_text_view);
                 TextView location_text_view = (TextView) findViewById(R.id.location_text_view);
                 TextView temperature_text_view = (TextView) findViewById(R.id.temperature_text_view);
-                
-                switch (weather_icon){
+
+                switch (weather_icon) {
                     case "clear-day":
                         weather_icon_image_view.setImageResource(R.drawable.sun);
-                    break;
-                    case "wind":weather_icon_image_view.setImageResource(R.drawable.wind);
                         break;
-                    case "cloudy": weather_icon_image_view.setImageResource(R.drawable.cloud);
+                    case "wind":
+                        weather_icon_image_view.setImageResource(R.drawable.wind);
                         break;
-                    case "partly-cloudy-day": weather_icon_image_view.setImageResource(R.drawable.partlysunny);
+                    case "cloudy":
+                        weather_icon_image_view.setImageResource(R.drawable.cloud);
                         break;
-                    case "rain": weather_icon_image_view.setImageResource(R.drawable.rain);
+                    case "partly-cloudy-day":
+                        weather_icon_image_view.setImageResource(R.drawable.partlysunny);
                         break;
-                    case "snow": weather_icon_image_view.setImageResource(R.drawable.snow);
+                    case "rain":
+                        weather_icon_image_view.setImageResource(R.drawable.rain);
                         break;
-                    case "snow-thin": weather_icon_image_view.setImageResource(R.drawable.snow);
+                    case "snow":
+                        weather_icon_image_view.setImageResource(R.drawable.snow);
                         break;
-                    case "fog": weather_icon_image_view.setImageResource(R.drawable.haze);
+                    case "snow-thin":
+                        weather_icon_image_view.setImageResource(R.drawable.snow);
                         break;
-                    case "clear-night": weather_icon_image_view.setImageResource(R.drawable.moon);
+                    case "fog":
+                        weather_icon_image_view.setImageResource(R.drawable.haze);
                         break;
-                    case "partly-cloudy-night": weather_icon_image_view.setImageResource(R.drawable.partlymoon);
+                    case "clear-night":
+                        weather_icon_image_view.setImageResource(R.drawable.moon);
                         break;
-                    case "thunderstorm": weather_icon_image_view.setImageResource(R.drawable.storm);
+                    case "partly-cloudy-night":
+                        weather_icon_image_view.setImageResource(R.drawable.partlymoon);
                         break;
-                    case "tornado": weather_icon_image_view.setImageResource(R.drawable.tornado);
+                    case "thunderstorm":
+                        weather_icon_image_view.setImageResource(R.drawable.storm);
                         break;
-                    case "hail": weather_icon_image_view.setImageResource(R.drawable.hail);
+                    case "tornado":
+                        weather_icon_image_view.setImageResource(R.drawable.tornado);
+                        break;
+                    case "hail":
+                        weather_icon_image_view.setImageResource(R.drawable.hail);
                         break;
                 }
 
@@ -349,5 +386,23 @@ public class MirrorDisplay extends Activity {
         return sb.toString();
     }
 
+    public static void rotateScreen(final RelativeLayout layout, final Activity activity) {
+
+        Display display = activity.getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int w = size.x;
+        int h = size.y;
+
+        layout.setRotation(90.0f);
+        layout.setTranslationX((w - h) / 2);
+        layout.setTranslationY((h - w) / 2);
+
+        ViewGroup.LayoutParams lp = layout.getLayoutParams();
+        lp.height = w;
+        lp.width = h;
+        layout.setLayoutParams(lp);
+        layout.requestLayout();
+    }
 }
 
